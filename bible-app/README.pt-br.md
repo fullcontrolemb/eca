@@ -1,8 +1,6 @@
+[English](./README.md) | **Português**
+
 ---
-
-### Opção 2: Versão em Português (Nome do arquivo: `README.pt-br.md`)
-
-```markdown
 # Leitor da Bíblia KJA 📖
 
 Uma aplicação web full-stack profissional desenvolvida para leitura da Bíblia na versão King James Atualizada (KJA). O projeto utiliza um backend em Node.js e uma base de dados SQLite.
