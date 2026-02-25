@@ -1,8 +1,7 @@
 **English** | [Português](./README.pt-br.md)
+
 ---
 
-# KJA Bible Reader 📖
-... (restante do conteúdo)
 # KJA Bible Reader 📖
 
 A professional full-stack web application designed for reading the King James Updated (KJA) Bible version. This project features a robust backend using Node.js and a fast SQLite database.
