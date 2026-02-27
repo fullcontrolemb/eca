@@ -1,0 +1,4 @@
+streamlit
+google-generativeai
+pydrive2
+google-api-python-client
