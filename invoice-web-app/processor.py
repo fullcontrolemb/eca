@@ -7,7 +7,7 @@ def extract_invoice_details(image_path):
     api_key = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
     
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
     
     # Prompt focado em extrair dados estruturados
     prompt = """
