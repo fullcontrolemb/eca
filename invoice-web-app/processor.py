@@ -1,36 +1,31 @@
-import google.generativeai as genai
+from google import genai
 import os
 import json
 
 def extract_invoice_details(image_path):
-    # Pega a chave das configurações (Secrets) do site
+    # Pega a chave do ambiente
     api_key = os.getenv("GEMINI_API_KEY")
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    
-    # Prompt focado em extrair dados estruturados
-    prompt = """
-    Analyze this invoice and return ONLY a JSON object with:
-    {
-      "vendor_name": "string",
-      "date": "YYYY-MM-DD",
-      "total_amount": float,
-      "currency": "string"
-    }
-    """
+    # Prompt otimizado
+    prompt = "Extract from this invoice: vendor_name, date (YYYY-MM-DD), total_amount (float), and currency. Return ONLY JSON."
     
     # Carrega a imagem
     with open(image_path, "rb") as f:
-        image_data = f.read()
+        image_bytes = f.read()
+
+    # Chama a API
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=[prompt, image_bytes]
+    )
     
-    contents = [
-        prompt,
-        {"mime_type": "image/jpeg", "data": image_data}
-    ]
-    
-    response = model.generate_content(contents)
-    
-    # Limpa a resposta para garantir que seja um JSON válido
-    json_text = response.text.replace('```json', '').replace('```', '').strip()
-    return json.loads(json_text)
+    # Limpeza de texto para garantir JSON puro
+    try:
+        text = response.text
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0]
+        return json.loads(text.strip())
+    except Exception as e:
+        print(f"Erro no parse do JSON: {e}")
+        return None
