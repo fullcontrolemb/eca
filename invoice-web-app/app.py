@@ -1,31 +1,39 @@
 import streamlit as st
+import os
 from processor import extract_invoice_details
-from uploader import authenticate_drive, upload_invoice, append_to_sheet
+# Comente as linhas do uploader se ainda não configurou as credenciais do Google
+# from uploader import authenticate_drive, upload_invoice, append_to_sheet
+
+st.set_page_config(page_title="AI Invoice Scanner", page_icon="📑")
 
 st.title("📑 AI Invoice Scanner")
-st.subheader("Upload your receipt and let the AI do the work")
+st.info("Upload your receipt and let Gemini AI organize your finances.")
 
-# Upload do arquivo na página
-uploaded_file = st.file_uploader("Choose an invoice image", type=['png', 'jpg', 'jpeg', 'pdf'])
+uploaded_file = st.file_uploader("Choose an invoice image", type=['png', 'jpg', 'jpeg'])
 
-if uploaded_file is not None:
-    st.image(uploaded_file, caption='Invoice Preview', width=300)
+if uploaded_file:
+    st.image(uploaded_file, caption='Invoice Preview', use_container_width=True)
     
-    if st.button("Process & Save to Drive"):
-        with st.spinner('AI is reading the invoice...'):
-            # Salva temporariamente para processar
+    if st.button("Process Invoice"):
+        with st.spinner('AI is analyzing the document...'):
+            # Salva temporariamente
             with open("temp_file.jpg", "wb") as f:
                 f.write(uploaded_file.getbuffer())
             
-            # 1. Extração com IA
-            data = extract_invoice_details("temp_file.jpg")
-            st.success(f"Extracted: {data['vendor_name']} - {data['total_amount']} {data['currency']}")
-            
-            # 2. Upload e Planilha
-            drive = authenticate_drive()
-            new_name = f"{data['date']}_{data['vendor_name']}.jpg"
-            upload_invoice(drive, "temp_file.jpg", "SEU_FOLDER_ID", new_name)
-            append_to_sheet(data, "SEU_SHEET_ID")
-            
-            st.balloons()
-            st.info("File saved and Sheet updated!")
+            try:
+                # Chama a função do processor.py
+                data = extract_invoice_details("temp_file.jpg")
+                
+                st.subheader("Results:")
+                col1, col2 = st.columns(2)
+                col1.metric("Vendor", data['vendor_name'])
+                col2.metric("Total", f"{data['currency']} {data['total_amount']}")
+                st.write(f"**Date:** {data['date']}")
+                
+                st.success("Analysis complete!")
+                
+            except Exception as e:
+                st.error(f"Error: {e}")
+            finally:
+                if os.path.exists("temp_file.jpg"):
+                    os.remove("temp_file.jpg")
