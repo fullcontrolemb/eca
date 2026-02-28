@@ -2,6 +2,9 @@ import streamlit as st
 from google_auth_oauthlib.flow import Flow
 from processor import extract_invoice_details, save_to_user_sheets
 
+st.write("Current URL:", st.query_params)
+st.write("Redirect URI config:", st.secrets["REDIRECT_URI"])
+
 # --- Configuração ---
 st.set_page_config(page_title="AI Invoice Scanner", page_icon="📑")
 
