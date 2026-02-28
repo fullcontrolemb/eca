@@ -1,6 +1,8 @@
 import streamlit as st
 from google_auth_oauthlib.flow import Flow
 from processor import extract_invoice_details, save_to_user_sheets
+import requests
+
 
 st.write("Current URL:", st.query_params)
 st.write("Redirect URI config:", st.secrets["REDIRECT_URI"])
@@ -17,8 +19,9 @@ CLIENT_CONFIG = {
     }
 }
 
-from google_auth_oauthlib.flow import Flow
-import streamlit as st
+CLIENT_ID = st.secrets["GOOGLE_CLIENT_ID"]
+CLIENT_SECRET = st.secrets["GOOGLE_CLIENT_SECRET"]
+REDIRECT_URI = st.secrets["REDIRECT_URI"]
 
 SCOPES = [
     "openid",
@@ -27,48 +30,49 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
 ]
 
-def create_flow(state=None):
-    return Flow.from_client_config(
-        CLIENT_CONFIG,
-        scopes=SCOPES,
-        redirect_uri=st.secrets["REDIRECT_URI"],
-        state=state
-    )
+AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+TOKEN_URL = "https://oauth2.googleapis.com/token"
 
-# ===============================
+# =============================
 # CALLBACK
-# ===============================
-
+# =============================
 if "code" in st.query_params:
 
-    flow = create_flow(state=st.session_state.get("oauth_state"))
+    token_data = {
+        "code": st.query_params["code"],
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "redirect_uri": REDIRECT_URI,
+        "grant_type": "authorization_code",
+    }
 
-    flow.fetch_token(code=st.query_params["code"])
+    response = requests.post(TOKEN_URL, data=token_data)
+    token_json = response.json()
 
-    st.session_state["user_creds"] = flow.credentials
+    if "access_token" in token_json:
+        st.session_state["user_creds"] = token_json
+        st.query_params.clear()
+        st.rerun()
+    else:
+        st.error(token_json)
+        st.stop()
 
-    st.query_params.clear()
-    st.rerun()
-
-
-# ===============================
+# =============================
 # LOGIN
-# ===============================
-
+# =============================
 if "user_creds" not in st.session_state:
 
-    flow = create_flow()
+    params = {
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+        "response_type": "code",
+        "scope": " ".join(SCOPES),
+        "access_type": "offline",
+        "prompt": "consent",
+    }
 
-    auth_url, state = flow.authorization_url(
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent"
-    )
-
-    # 🔥 SALVA O STATE CORRETO
-    st.session_state["oauth_state"] = state
-
-    st.link_button("🚀 Fazer Login com Google", auth_url)
+    auth_request = requests.Request("GET", AUTH_URL, params=params).prepare()
+    st.link_button("🚀 Fazer Login com Google", auth_request.url)
     st.stop()
 
 
