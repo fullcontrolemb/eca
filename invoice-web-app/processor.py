@@ -4,7 +4,7 @@ from google.genai import types
 import os
 import json
 import gspread
-from google.oauth2.service_account import Credentials
+from google.oauth2.credentials import Credentials
 
 def extract_invoice_details(image_path):
     """Extrai dados usando o nome técnico completo para evitar erro 404."""
@@ -49,36 +49,43 @@ def extract_invoice_details(image_path):
 
 # --- FUNÇÕES AUXILIARES ---
 
-def save_to_google_sheets(data):
-    """Salva os dados extraídos na sua planilha do Google."""
+def save_to_user_sheets(data, user_creds):
+    """
+    Salva os dados extraídos na planilha do PRÓPRIO usuário logado.
+    """
     try:
-        # Define os escopos necessários para Sheets e Drive
-        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        # 1. Autoriza o gspread usando as credenciais do usuário (OAuth)
+        # O objeto 'user_creds' já vem com os escopos autorizados no login
+        client = gspread.authorize(user_creds)
         
-        # Carrega as credenciais do segredo do Streamlit
-        if "GOOGLE_SHEETS_CREDENTIALS" not in st.secrets:
-            st.warning("Google Sheets credentials not found in Secrets!")
-            return
-
-        creds_dict = json.loads(st.secrets["GOOGLE_SHEETS_CREDENTIALS"])
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        # 2. Define o nome da planilha que será usada no Drive do usuário
+        spreadsheet_name = "My_Invoice_Control_2026"
         
-        client = gspread.authorize(creds)
+        try:
+            # Tenta abrir a planilha pelo nome
+            sh = client.open(spreadsheet_name)
+        except gspread.SpreadsheetNotFound:
+            # Se a planilha não existir no Drive do usuário, o app CRIA uma para ele
+            sh = client.create(spreadsheet_name)
+            # Adiciona um cabeçalho bonitinho na primeira linha
+            sh.sheet1.append_row(["Date", "Vendor", "Total Amount", "Currency", "Processed At"])
+            st.info(f"Criamos uma nova planilha '{spreadsheet_name}' no seu Google Drive!")
+            
+        sheet = sh.sheet1
         
-        # Abre a planilha pelo nome configurado
-        # Certifique-se de que a planilha 'my_invoice_control' existe e foi compartilhada com o e-mail do JSON
-        sheet = client.open("my_invoice_control").sheet1
-        
-        # Prepara a linha para inserir
+        # 3. Prepara a linha para inserir (mesma lógica que você já tinha)
+        from datetime import datetime
         row = [
             data.get('date', 'N/A'),
             data.get('vendor_name', 'Unknown'),
             data.get('total_amount', 0),
-            data.get('currency', '$')
+            data.get('currency', '$'),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S") # Coluna extra de controle
         ]
         
+        # 4. Insere a linha
         sheet.append_row(row)
-        st.toast("✅ Data saved to Google Sheets!", icon="📊")
+        st.toast("✅ Dados salvos na SUA planilha do Google!", icon="📊")
         
     except Exception as e:
-        st.warning(f"Could not save to Sheets: {e}")
+        st.error(f"Erro ao salvar no Google Sheets: {e}")
