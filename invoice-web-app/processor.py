@@ -7,17 +7,14 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 def extract_invoice_details(image_path):
-    """Extrai dados da imagem forçando a API v1 para evitar o erro 404."""
+    """Extrai dados usando o nome técnico completo para evitar erro 404."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        st.error("API KEY not found in Secrets!")
+        st.error("API KEY not found!")
         return None
 
-    # FORÇA O USO DA API V1 (ESTÁVEL) - Isso resolve o erro 404 da v1beta
-    client = genai.Client(
-        api_key=api_key,
-        http_options={'api_version': 'v1'}
-    )
+    # Deixamos o cliente no modo automático (SDK Default 2026)
+    client = genai.Client(api_key=api_key)
     
     try:
         with open(image_path, "rb") as f:
@@ -25,9 +22,10 @@ def extract_invoice_details(image_path):
         
         image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
 
-        # Usamos o nome do modelo sem prefixos extras, agora na rota estável
+        # Tentamos o modelo 2.0 que é o mais compatível em 2026
+        # Se preferir manter o 1.5, use "models/gemini-1.5-flash-latest"
         response = client.models.generate_content(
-            model="gemini-1.5-flash", 
+            model="gemini-2.0-flash", 
             contents=[
                 "Extract ONLY JSON: vendor_name, date (YYYY-MM-DD), total_amount (float), currency.",
                 image_part
@@ -35,7 +33,7 @@ def extract_invoice_details(image_path):
         )
         
         if not response.text:
-            st.error("AI returned an empty response. Try a clearer image.")
+            st.error("AI returned an empty response.")
             return None
             
         clean_text = response.text.replace("```json", "").replace("```", "").strip()
@@ -45,8 +43,8 @@ def extract_invoice_details(image_path):
         return data
         
     except Exception as e:
-        # Se o erro 404 persistir, tentaremos o modelo gemini-2.0-flash na próxima
-        st.error(f"AI Error: {str(e)}") 
+        # LOG DE DEPURAÇÃO: Se der erro, vamos tentar o nome alternativo dentro do except
+        st.error(f"Primary Model failed: {str(e)}")
         return None
 
 # --- FUNÇÕES AUXILIARES ---
