@@ -11,8 +11,8 @@ uploaded_file = st.file_uploader("Choose an invoice image", type=['png', 'jpg', 
 
 if uploaded_file:
     # Mostra a imagem na tela
-    st.image(uploaded_file, caption='Invoice Preview', width='stretch')
     
+    st.image(uploaded_file, caption='Invoice Preview', use_container_width=True)
     if st.button("Process Invoice"):
         with st.spinner('AI is analyzing the document...'):
             # Salva o arquivo temporariamente
