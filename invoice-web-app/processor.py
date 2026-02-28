@@ -7,23 +7,25 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 def extract_invoice_details(image_path):
-    """Extrai dados da imagem usando o modelo estável gemini-1.5-flash."""
+    """Extrai dados da imagem forçando a API v1 para evitar o erro 404."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         st.error("API KEY not found in Secrets!")
         return None
 
-    # Inicializa o cliente padrão do Google GenAI
-    client = genai.Client(api_key=api_key)
+    # FORÇA O USO DA API V1 (ESTÁVEL) - Isso resolve o erro 404 da v1beta
+    client = genai.Client(
+        api_key=api_key,
+        http_options={'api_version': 'v1'}
+    )
     
     try:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
         
-        # Prepara a imagem para o modelo
         image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
 
-        # Usando o modelo gemini-1.5-flash (mais estável para evitar erro 404)
+        # Usamos o nome do modelo sem prefixos extras, agora na rota estável
         response = client.models.generate_content(
             model="gemini-1.5-flash", 
             contents=[
@@ -32,23 +34,18 @@ def extract_invoice_details(image_path):
             ]
         )
         
-        # Verifica se a IA retornou texto
         if not response.text:
             st.error("AI returned an empty response. Try a clearer image.")
             return None
             
-        # Limpeza e conversão do texto para dicionário Python
-        raw_text = response.text
-        clean_text = raw_text.replace("```json", "").replace("```", "").strip()
+        clean_text = response.text.replace("```json", "").replace("```", "").strip()
         data = json.loads(clean_text)
         
-        # Tenta salvar no Google Sheets automaticamente após extrair
         save_to_google_sheets(data)
-        
         return data
         
     except Exception as e:
-        # Mostra o erro real (429 para cota, 403 para chave, etc)
+        # Se o erro 404 persistir, tentaremos o modelo gemini-2.0-flash na próxima
         st.error(f"AI Error: {str(e)}") 
         return None
 
