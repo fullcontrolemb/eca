@@ -4,27 +4,26 @@ from google.genai import types
 import os
 import json
 import gspread
+from google.oauth2.credentials import Credentials
 from datetime import datetime
 
 def extract_invoice_details(uploaded_file):
-    """Extrai dados da nota fiscal usando a API do Gemini 2.0."""
-    # Busca a chave nos Secrets do Streamlit (mais seguro que osenv puro)
-    api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+    """Extrai dados usando o Google Gemini 2.0."""
+    # Busca a chave de ambiente ou secrets
+    api_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
     
     if not api_key:
-        st.error("API KEY (GEMINI_API_KEY) não encontrada nos Secrets!")
+        st.error("GEMINI_API_KEY not found!")
         return None
 
-    # Inicializa o cliente Gemini
     client = genai.Client(api_key=api_key)
     
     try:
-        # IMPORTANTE: Lemos os bytes diretamente do arquivo subido no Streamlit
+        # CORREÇÃO: Lê os bytes do objeto UploadedFile diretamente
         image_bytes = uploaded_file.getvalue()
         
         image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
 
-        # Chama o modelo para processar a imagem
         response = client.models.generate_content(
             model="gemini-2.0-flash", 
             contents=[
@@ -33,48 +32,45 @@ def extract_invoice_details(uploaded_file):
             ]
         )
         
-        if not response or not response.text:
-            st.error("A IA não conseguiu ler os dados da imagem.")
+        if not response.text:
+            st.error("AI returned an empty response.")
             return None
             
-        # Limpa a resposta para garantir que seja um JSON válido
         clean_text = response.text.replace("```json", "").replace("```", "").strip()
         data = json.loads(clean_text)
         
-        # RETORNO: Apenas devolvemos os dados. 
-        # NÃO chamamos o salvamento aqui dentro para evitar erros de credenciais.
+        # Removida a chamada save_to_google_sheets(data) pois ela não existe.
+        # O salvamento agora é feito pelo app.py chamando save_to_user_sheets
         return data
         
     except Exception as e:
-        st.error(f"Erro na extração dos dados: {str(e)}")
+        st.error(f"Gemini error: {str(e)}")
         return None
 
-# --- FUNÇÕES DE ARMAZENAMENTO ---
+# --- FUNÇÕES AUXILIARES ---
 
 def save_to_user_sheets(data, user_creds):
     """
-    Salva os dados extraídos na planilha do Google Drive do usuário logado.
+    Salva os dados extraídos na planilha do PRÓPRIO usuário logado.
     """
     try:
-        # Autoriza o gspread usando as credenciais dinâmicas do usuário (OAuth2)
+        # 1. Autoriza o gspread usando as credenciais do usuário (OAuth)
         client = gspread.authorize(user_creds)
         
-        # Nome do arquivo que será criado/buscado no Drive do usuário
+        # 2. Define o nome da planilha
         spreadsheet_name = "My_Invoice_Control_2026"
         
         try:
-            # Tenta abrir a planilha existente
             sh = client.open(spreadsheet_name)
         except gspread.SpreadsheetNotFound:
-            # Se não existir, cria uma nova automaticamente
+            # Cria a planilha se não existir
             sh = client.create(spreadsheet_name)
-            # Define o cabeçalho na primeira linha
             sh.sheet1.append_row(["Date", "Vendor", "Total Amount", "Currency", "Processed At"])
-            st.info(f"Uma nova planilha '{spreadsheet_name}' foi criada no seu Google Drive.")
+            st.info(f"Criamos uma nova planilha '{spreadsheet_name}' no seu Drive!")
             
         sheet = sh.sheet1
         
-        # Prepara a linha com os dados do JSON + carimbo de data/hora
+        # 3. Prepara a linha
         row = [
             data.get('date', 'N/A'),
             data.get('vendor_name', 'Unknown'),
@@ -83,9 +79,9 @@ def save_to_user_sheets(data, user_creds):
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ]
         
-        # Insere a linha na planilha
+        # 4. Insere a linha
         sheet.append_row(row)
-        st.toast("✅ Dados salvos com sucesso no seu Google Sheets!", icon="📊")
+        st.toast("✅ Dados salvos na sua planilha!", icon="📊")
         
     except Exception as e:
-        st.error(f"Erro ao salvar na planilha: {e}")
+        st.error(f"Erro ao salvar no Google Sheets: {e}")

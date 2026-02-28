@@ -23,7 +23,7 @@ def create_oauth_flow():
         ],
         redirect_uri=st.secrets["REDIRECT_URI"]
     )
-    # Forçamos o verifier a ser None para não dar erro na volta
+    # Forçamos o verifier a ser None para evitar o erro de PKCE no Streamlit
     flow.code_verifier = None 
     return flow
 
@@ -31,25 +31,20 @@ def create_oauth_flow():
 st.set_page_config(page_title="AI Invoice Scanner", page_icon="📑")
 
 # --- Lógica de Captura do Retorno do Google (Callback) ---
-# --- Lógica de Captura do Retorno do Google (Callback) ---
 if "code" in st.query_params and "user_creds" not in st.session_state:
     try:
         flow = create_oauth_flow()
-        
-        # ALTERAÇÃO CRÍTICA: Passamos o code_verifier=None DIRETAMENTE aqui.
-        # Isso ignora a verificação PKCE que está causando o erro invalid_grant.
+        # CORREÇÃO CRÍTICA: Passar code_verifier=None explicitamente aqui
         flow.fetch_token(
             code=st.query_params["code"],
             code_verifier=None
         )
-        
         st.session_state["user_creds"] = flow.credentials
         st.query_params.clear()
         st.rerun()
     except Exception as e:
         st.query_params.clear()
         st.error(f"Erro ao processar login: {e}")
-# --- Interface do Usuário ---
 
 # --- Interface do Usuário ---
 
@@ -64,9 +59,6 @@ if "user_creds" not in st.session_state:
     st.info("Por favor, faça login com sua conta Google para começar.")
     
     flow = create_oauth_flow()
-    
-    # ATUALIZAÇÃO NECESSÁRIA: Adicione include_granted_scopes='true'
-    # O Google às vezes exige isso para manter a sessão estável sem o PKCE
     auth_url, _ = flow.authorization_url(
         prompt='consent', 
         access_type='offline',
