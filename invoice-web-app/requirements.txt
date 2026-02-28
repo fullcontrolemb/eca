@@ -2,3 +2,7 @@ streamlit
 google-genai
 pydrive2
 google-api-python-client
+streamlit
+google-genai
+gspread
+google-auth
