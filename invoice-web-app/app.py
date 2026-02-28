@@ -22,6 +22,13 @@ SCOPES = [
 ]
 
 
+# ============================================================
+# LOGIN GOOGLE - VERSÃO ESTÁVEL PARA STREAMLIT
+# ============================================================
+
+if "flow_state" not in st.session_state:
+    st.session_state["flow_state"] = None
+
 def create_flow():
     return Flow.from_client_config(
         CLIENT_CONFIG,
@@ -29,23 +36,16 @@ def create_flow():
         redirect_uri=st.secrets["REDIRECT_URI"],
     )
 
-
-# ============================================================
-# 🔐 CALLBACK DO GOOGLE
-# ============================================================
-
-if "code" in st.query_params and "user_creds" not in st.session_state:
+# CALLBACK
+if "code" in st.query_params:
     try:
         flow = create_flow()
 
-        # 🔥 Recupera o code_verifier salvo
-        flow.code_verifier = st.session_state.get("code_verifier")
-
-        flow.fetch_token(code=st.query_params["code"])
+        flow.fetch_token(
+            code=st.query_params["code"]
+        )
 
         st.session_state["user_creds"] = flow.credentials
-
-        # Limpa parâmetros da URL
         st.query_params.clear()
         st.rerun()
 
@@ -54,21 +54,22 @@ if "code" in st.query_params and "user_creds" not in st.session_state:
         st.stop()
 
 
-# ============================================================
-# 🚀 USUÁRIO NÃO LOGADO
-# ============================================================
-
+# NÃO LOGADO
 if "user_creds" not in st.session_state:
     st.title("📑 AI Invoice Scanner")
-    st.write("Faça login com sua conta Google para começar.")
 
     flow = create_flow()
 
-    auth_url, _ = flow.authorization_url(
-        prompt="consent",
+    auth_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
+        prompt="consent"
     )
+
+    st.session_state["flow_state"] = state
+
+    st.link_button("🚀 Fazer Login com Google", auth_url)
+    st.stop()
 
     # 🔥 SALVA O CODE VERIFIER NA SESSÃO
     st.session_state["code_verifier"] = flow.code_verifier
