@@ -13,6 +13,7 @@ CLIENT_CONFIG = {
 }
 
 def create_oauth_flow():
+    """Cria o fluxo de autenticação e desativa o PKCE para o Streamlit."""
     flow = Flow.from_client_config(
         CLIENT_CONFIG,
         scopes=[
@@ -23,7 +24,8 @@ def create_oauth_flow():
         ],
         redirect_uri=st.secrets["REDIRECT_URI"]
     )
-    flow.code_verifier = Nome
+    # Importante: Mantemos o verifier como None aqui também
+    flow.code_verifier = None 
     return flow
 
 # --- Configuração da Página ---
@@ -31,31 +33,15 @@ st.set_page_config(page_title="AI Invoice Scanner", page_icon="📑")
 
 # --- Lógica de Captura do Retorno do Google (Callback) ---
 if "code" in st.query_params and "user_creds" not in st.session_state:
-   
-   try:
+    try:
         flow = create_oauth_flow()
-        flow.fetch_token(
-            code_verifier=None
-            code=st.query_params["conde"],code_verifier=Nome
-        )
-
+        
+        # CORREÇÃO DA SINTAXE: Note a vírgula após o parâmetro 'code'
         flow.fetch_token(
             code=st.query_params["code"],
             code_verifier=None
         )
-
         
-        flow.code_verifier = code_verifier
-        flow.fetch_token(code=st.query_params["code"])
-        st.session_state["user_creds"] = flow.credentials
-        st.query_params.clear()
-        st.rerun()
-   
-    try:
-        flow = create_oauth_flow()
-        code_verifier = st.session_state.pop("oauth_code_verifier", None)
-        flow.code_verifier = code_verifier
-        flow.fetch_token(code=st.query_params["code"])
         st.session_state["user_creds"] = flow.credentials
         st.query_params.clear()
         st.rerun()
@@ -81,7 +67,6 @@ if "user_creds" not in st.session_state:
         access_type='offline',
         include_granted_scopes='true'
     )
-    st.session_state["oauth_code_verifier"] = flow.code_verifier
     
     st.link_button("🚀 Fazer Login com Google", auth_url)
 
@@ -103,7 +88,7 @@ else:
         if st.button("🪄 Processar Nota Fiscal"):
             with st.spinner("A IA está analisando os dados..."):
                 try:
-                    # 1. Extração via Gemini
+                    # 1. Extração via Gemini (Passando o objeto do arquivo)
                     result = extract_invoice_details(uploaded_file)
                     
                     if result:
