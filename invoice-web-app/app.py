@@ -45,7 +45,7 @@ if "code" in st.query_params:
         "redirect_uri": REDIRECT_URI,
         "grant_type": "authorization_code",
     }
-
+    st.write("Redirect being sent to Google:", REDIRECT_URI)
     response = requests.post(TOKEN_URL, data=token_data)
     token_json = response.json()
 
