@@ -13,7 +13,6 @@ CLIENT_CONFIG = {
 }
 
 def create_oauth_flow():
-    """Cria o objeto de fluxo de autenticação do Google corrigindo o erro de Verifier."""
     flow = Flow.from_client_config(
         CLIENT_CONFIG,
         scopes=[
@@ -24,7 +23,7 @@ def create_oauth_flow():
         ],
         redirect_uri=st.secrets["REDIRECT_URI"]
     )
-    # RESOLVE O ERRO: "Missing code verifier"
+    # Forçamos o verifier a ser None para não dar erro na volta
     flow.code_verifier = None 
     return flow
 
@@ -45,6 +44,8 @@ if "code" in st.query_params and "user_creds" not in st.session_state:
 
 # --- Interface do Usuário ---
 
+# --- Interface do Usuário ---
+
 # CASO 1: Usuário NÃO está logado
 if "user_creds" not in st.session_state:
     st.title("📑 AI Invoice Scanner")
@@ -56,9 +57,15 @@ if "user_creds" not in st.session_state:
     st.info("Por favor, faça login com sua conta Google para começar.")
     
     flow = create_oauth_flow()
-    auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
     
-    # Usamos o link_button original para evitar o erro 403 do Google
+    # ATUALIZAÇÃO NECESSÁRIA: Adicione include_granted_scopes='true'
+    # O Google às vezes exige isso para manter a sessão estável sem o PKCE
+    auth_url, _ = flow.authorization_url(
+        prompt='consent', 
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+    
     st.link_button("🚀 Fazer Login com Google", auth_url)
 
 # CASO 2: Usuário ESTÁ logado
