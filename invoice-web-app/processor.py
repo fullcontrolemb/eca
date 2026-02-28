@@ -6,7 +6,7 @@ import json
 def extract_invoice_details(image_path):
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("DEBUG: GEMINI_API_KEY não encontrada nos Secrets!")
+        print("DEBUG: GEMINI_API_KEY não encontrada!")
         return None
 
     client = genai.Client(api_key=api_key)
@@ -17,15 +17,15 @@ def extract_invoice_details(image_path):
         
         image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
 
-        # Configuração: JSON forçado + Filtros de segurança desativados
+        # Nomes das categorias corrigidos para o padrão 2026 da google-genai
         config = types.GenerateContentConfig(
             response_mime_type="application/json",
             temperature=0.1,
             safety_settings=[
-                types.SafetySetting(category="HATE_SPEECH", threshold="BLOCK_NONE"),
-                types.SafetySetting(category="HARASSMENT", threshold="BLOCK_NONE"),
-                types.SafetySetting(category="SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                types.SafetySetting(category="DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
+                types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+                types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+                types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+                types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
             ]
         )
 
@@ -37,11 +37,9 @@ def extract_invoice_details(image_path):
             config=config
         )
         
-        # Log para vermos no console o que a IA mandou
         print(f"DEBUG - Resposta da IA: {response.text}")
-        
         return json.loads(response.text)
         
     except Exception as e:
-        print(f"DEBUG - Erro Crítico no Processor: {str(e)}")
+        print(f"DEBUG - Erro: {str(e)}")
         return None
