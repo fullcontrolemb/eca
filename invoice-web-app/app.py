@@ -27,16 +27,21 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
 ]
 
-def create_flow():
+def create_flow(state=None):
     return Flow.from_client_config(
         CLIENT_CONFIG,
         scopes=SCOPES,
         redirect_uri=st.secrets["REDIRECT_URI"],
+        state=state
     )
 
+# ===============================
 # CALLBACK
+# ===============================
+
 if "code" in st.query_params:
-    flow = create_flow()
+
+    flow = create_flow(state=st.session_state.get("oauth_state"))
 
     flow.fetch_token(code=st.query_params["code"])
 
@@ -45,8 +50,13 @@ if "code" in st.query_params:
     st.query_params.clear()
     st.rerun()
 
-# NÃO LOGADO
+
+# ===============================
+# LOGIN
+# ===============================
+
 if "user_creds" not in st.session_state:
+
     flow = create_flow()
 
     auth_url, state = flow.authorization_url(
@@ -55,16 +65,8 @@ if "user_creds" not in st.session_state:
         prompt="consent"
     )
 
-    st.link_button("🚀 Fazer Login com Google", auth_url)
-    st.stop()
-
-    st.session_state["flow_state"] = state
-
-    st.link_button("🚀 Fazer Login com Google", auth_url)
-    st.stop()
-
-    # 🔥 SALVA O CODE VERIFIER NA SESSÃO
-    st.session_state["code_verifier"] = flow.code_verifier
+    # 🔥 SALVA O STATE CORRETO
+    st.session_state["oauth_state"] = state
 
     st.link_button("🚀 Fazer Login com Google", auth_url)
     st.stop()
