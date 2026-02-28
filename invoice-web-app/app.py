@@ -14,20 +14,15 @@ CLIENT_CONFIG = {
     }
 }
 
+from google_auth_oauthlib.flow import Flow
+import streamlit as st
+
 SCOPES = [
     "openid",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/spreadsheets",
 ]
-
-
-# ============================================================
-# LOGIN GOOGLE - VERSÃO ESTÁVEL PARA STREAMLIT
-# ============================================================
-
-if "flow_state" not in st.session_state:
-    st.session_state["flow_state"] = None
 
 def create_flow():
     return Flow.from_client_config(
@@ -38,26 +33,17 @@ def create_flow():
 
 # CALLBACK
 if "code" in st.query_params:
-    try:
-        flow = create_flow()
+    flow = create_flow()
 
-        flow.fetch_token(
-            code=st.query_params["code"]
-        )
+    flow.fetch_token(code=st.query_params["code"])
 
-        st.session_state["user_creds"] = flow.credentials
-        st.query_params.clear()
-        st.rerun()
+    st.session_state["user_creds"] = flow.credentials
 
-    except Exception as e:
-        st.error(f"Erro ao processar login: {e}")
-        st.stop()
-
+    st.query_params.clear()
+    st.rerun()
 
 # NÃO LOGADO
 if "user_creds" not in st.session_state:
-    st.title("📑 AI Invoice Scanner")
-
     flow = create_flow()
 
     auth_url, state = flow.authorization_url(
@@ -65,6 +51,9 @@ if "user_creds" not in st.session_state:
         include_granted_scopes="true",
         prompt="consent"
     )
+
+    st.link_button("🚀 Fazer Login com Google", auth_url)
+    st.stop()
 
     st.session_state["flow_state"] = state
 
