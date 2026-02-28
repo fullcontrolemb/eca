@@ -23,8 +23,7 @@ def create_oauth_flow():
         ],
         redirect_uri=st.secrets["REDIRECT_URI"]
     )
-    # Forçamos o verifier a ser None para evitar o erro de PKCE no Streamlit
-    flow.code_verifier = None 
+    flow.code_verifier = Nome
     return flow
 
 # --- Configuração da Página ---
@@ -32,13 +31,31 @@ st.set_page_config(page_title="AI Invoice Scanner", page_icon="📑")
 
 # --- Lógica de Captura do Retorno do Google (Callback) ---
 if "code" in st.query_params and "user_creds" not in st.session_state:
-    try:
+   
+   try:
         flow = create_oauth_flow()
-        # CORREÇÃO CRÍTICA: Passar code_verifier=None explicitamente aqui
+        flow.fetch_token(
+            code_verifier=None
+            code=st.query_params["conde"],code_verifier=Nome
+        )
+
         flow.fetch_token(
             code=st.query_params["code"],
             code_verifier=None
         )
+
+        
+        flow.code_verifier = code_verifier
+        flow.fetch_token(code=st.query_params["code"])
+        st.session_state["user_creds"] = flow.credentials
+        st.query_params.clear()
+        st.rerun()
+   
+    try:
+        flow = create_oauth_flow()
+        code_verifier = st.session_state.pop("oauth_code_verifier", None)
+        flow.code_verifier = code_verifier
+        flow.fetch_token(code=st.query_params["code"])
         st.session_state["user_creds"] = flow.credentials
         st.query_params.clear()
         st.rerun()
@@ -64,6 +81,7 @@ if "user_creds" not in st.session_state:
         access_type='offline',
         include_granted_scopes='true'
     )
+    st.session_state["oauth_code_verifier"] = flow.code_verifier
     
     st.link_button("🚀 Fazer Login com Google", auth_url)
 
