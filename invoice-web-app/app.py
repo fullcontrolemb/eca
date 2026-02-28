@@ -31,17 +31,24 @@ def create_oauth_flow():
 st.set_page_config(page_title="AI Invoice Scanner", page_icon="📑")
 
 # --- Lógica de Captura do Retorno do Google (Callback) ---
+# --- Lógica de Captura do Retorno do Google (Callback) ---
 if "code" in st.query_params and "user_creds" not in st.session_state:
     try:
         flow = create_oauth_flow()
-        flow.fetch_token(code=st.query_params["code"])
+        
+        # ALTERAÇÃO CRÍTICA: Passamos o code_verifier=None DIRETAMENTE aqui.
+        # Isso ignora a verificação PKCE que está causando o erro invalid_grant.
+        flow.fetch_token(
+            code=st.query_params["code"],
+            code_verifier=None
+        )
+        
         st.session_state["user_creds"] = flow.credentials
         st.query_params.clear()
         st.rerun()
     except Exception as e:
         st.query_params.clear()
         st.error(f"Erro ao processar login: {e}")
-
 # --- Interface do Usuário ---
 
 # --- Interface do Usuário ---
