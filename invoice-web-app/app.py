@@ -5,7 +5,7 @@ from dashboard import render_dashboard
 from database import get_token
 
 import extra_streamlit_components as stx
-cookie_manager = stx.CookieManager()
+cookie_manager = stx.CookieManager(key="cookie_manager")
 
 # 🔥 Restaurar email salvo no cookie
 if "user_email" not in st.session_state:

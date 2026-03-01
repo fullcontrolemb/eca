@@ -3,8 +3,6 @@ import requests
 from database import save_token
 from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, SCOPES
 
-import extra_streamlit_components as stx
-cookie_manager = stx.CookieManager()
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
