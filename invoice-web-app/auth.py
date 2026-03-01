@@ -51,11 +51,6 @@ def handle_callback():
             st.error(token_json)
             st.stop()
 
-        else:
-            st.error(token_json)
-            st.stop()
-
-
 def login_page():
     params = {
         "client_id": CLIENT_ID,
