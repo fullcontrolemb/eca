@@ -85,7 +85,7 @@ if st.session_state["page"] == "view":
     col1, col2 = st.columns([1, 5])
 
     with col1:
-        if st.button("🔙 Voltar"):
+        if st.button("🔙 Voltar", key="voltar_view"):
             st.session_state["page"] = "main"
             st.rerun()
 
@@ -100,6 +100,6 @@ if st.session_state["page"] == "view":
         st.info("Não há dados no mês atual.")
 
     # 🔙 BOTÃO VOLTAR
-    if st.button("🔙 Voltar"):
+    if st.button("🔙 Voltar", key="voltar_add"):
         st.session_state["page"] = "main"
         st.rerun()
