@@ -36,4 +36,11 @@ def render_dashboard(df, entradas, saidas, saldo):
         "Valor": [entradas, saidas, abs(saldo)]
     }).set_index("Categoria")
 
-    st.pyplot(chart_data.plot.pie(y="Valor", autopct="%1.1f%%").figure)
+    # Definindo cores fixas
+cores = ["green", "red", "blue"]
+fig = chart_data.plot.pie(
+    y="Valor",
+    autopct="%1.1f%%",
+    colors=cores
+).figure
+st.pyplot(fig)
