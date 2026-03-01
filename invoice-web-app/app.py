@@ -4,10 +4,9 @@ from sheets import save_entry, get_month_data
 from dashboard import render_dashboard
 from database import get_token
 
-import database
-st.write("Database importou corretamente")
-
 import extra_streamlit_components as stx
+
+# 🔥 Cookie manager (APENAS UMA VEZ)
 cookie_manager = stx.CookieManager(key="cookie_manager")
 
 # 🔥 Restaurar email salvo no cookie
@@ -16,7 +15,19 @@ if "user_email" not in st.session_state:
     if saved_email:
         st.session_state["user_email"] = saved_email
 
+# 🔥 Restaurar token do banco
+if "user_email" in st.session_state and "user_creds" not in st.session_state:
+    saved_token = get_token(st.session_state["user_email"])
+    if saved_token:
+        st.session_state["user_creds"] = saved_token
+
 st.set_page_config(page_title="Finance SaaS", page_icon="📊")
+
+handle_callback()
+
+if "user_creds" not in st.session_state:
+    login_page()
+    st.stop()
 
 handle_callback()
 
