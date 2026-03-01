@@ -9,49 +9,51 @@ TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 
 def handle_callback():
-    if "code" in st.query_params:
+    if "code" not in st.query_params:
+        return
 
-        token_data = {
-            "code": st.query_params["code"],
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
-            "redirect_uri": REDIRECT_URI,
-            "grant_type": "authorization_code",
-        }
+    # 🔥 Captura e limpa imediatamente o code
+    code = st.query_params["code"]
+    st.query_params.clear()
 
-        response = requests.post(TOKEN_URL, data=token_data)
-        token_json = response.json()
+    token_data = {
+        "code": code,
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "redirect_uri": REDIRECT_URI,
+        "grant_type": "authorization_code",
+    }
 
-        if "access_token" in token_json:
+    response = requests.post(TOKEN_URL, data=token_data)
+    token_json = response.json()
 
-            # 🔥 Buscar email do usuário
-            userinfo = requests.get(
-                "https://www.googleapis.com/oauth2/v2/userinfo",
-                headers={"Authorization": f"Bearer {token_json['access_token']}"}
-            ).json()
+    if "access_token" not in token_json:
+        st.error(token_json)
+        st.stop()
 
-            email = userinfo["email"]
+    # 🔥 Buscar email do usuário
+    userinfo = requests.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        headers={"Authorization": f"Bearer {token_json['access_token']}"}
+    ).json()
 
-            # 🔥 Preserva refresh_token se já existir
-            if "user_creds" in st.session_state:
-                existing_refresh = st.session_state["user_creds"].get("refresh_token")
-                if existing_refresh and "refresh_token" not in token_json:
-                    token_json["refresh_token"] = existing_refresh
+    email = userinfo["email"]
 
-            # 🔥 SALVA NO SUPABASE
-            save_token(email, token_json)
+    # 🔥 Preserva refresh_token se já existir
+    if "user_creds" in st.session_state:
+        existing_refresh = st.session_state["user_creds"].get("refresh_token")
+        if existing_refresh and "refresh_token" not in token_json:
+            token_json["refresh_token"] = existing_refresh
 
-            # 🔥 Salva na sessão
-            st.session_state["user_creds"] = token_json
-            st.session_state["user_email"] = email
-            cookie_manager.set("user_email", email)
-            
-            st.query_params.clear()
-            st.rerun()
+    # 🔥 SALVA NO SUPABASE
+    save_token(email, token_json)
 
-        else:
-            st.error(token_json)
-            st.stop()
+    # 🔥 Salva na sessão
+    st.session_state["user_creds"] = token_json
+    st.session_state["user_email"] = email
+    cookie_manager.set("user_email", email)
+
+    st.rerun()
 
 def login_page():
     params = {
