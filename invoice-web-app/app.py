@@ -69,9 +69,8 @@ if st.session_state["page"] == "main":
 
 if st.session_state["page"] == "add":
 
-    # 🔙 BOTÃO VOLTAR NO TOPO
+    # 🔙 BOTÃO VOLTAR
     col1, col2 = st.columns([1, 5])
-
     with col1:
         if st.button("🔙 Voltar", key="voltar_add"):
             st.session_state["page"] = "main"
@@ -79,17 +78,11 @@ if st.session_state["page"] == "add":
 
     st.title("➕ Novo Lançamento")
 
-with st.form("finance_form"):
+    # 🔹 Campo descrição temporária
+    if "descricao_temp" not in st.session_state:
+        st.session_state["descricao_temp"] = ""
 
-    date = st.date_input("Data")
-    tipo = st.selectbox("Tipo", ["Entrada", "Saída"], index=1)
-    value = st.number_input("Valor", min_value=0.0, format="%.2f")
-
-    description = st.text_input(
-        "Descrição",
-        value=st.session_state["descricao_temp"]
-    )
-
+    # 🔹 ATALHOS FORA DO FORM
     st.markdown("### ⚡ Atalhos rápidos")
 
     cols = st.columns(4)
@@ -98,20 +91,18 @@ with st.form("finance_form"):
 
         label = f"{item['icon']} {item['label']}" if item["icon"] else item["label"]
 
-        if cols[i % 4].form_submit_button(label):
+        if cols[i % 4].button(label, key=f"shortcut_{i}"):
             st.session_state["descricao_temp"] = item["label"]
             st.rerun()
 
     st.divider()
 
-    st.markdown("### ➕ Criar novo atalho")
-
+    # 🔹 Criar novo atalho
     colA, colB = st.columns(2)
-
     novo_nome = colA.text_input("Nome do botão")
     novo_icon = colB.text_input("Emoji (opcional)")
 
-    if st.form_submit_button("Adicionar Atalho"):
+    if st.button("Adicionar Atalho", key="add_shortcut"):
         if novo_nome:
             st.session_state["shortcuts"].append({
                 "label": novo_nome,
@@ -120,30 +111,20 @@ with st.form("finance_form"):
             st.success("Atalho criado!")
             st.rerun()
 
-    obs = st.text_area("Observação (opcional)")
+    st.divider()
 
-    submit = st.form_submit_button("Salvar")
-
-    if submit:
-        save_entry({
-            "date": str(date),
-            "type": tipo,
-            "value": value,
-            "description": st.session_state["descricao_temp"],
-            "obs": obs
-        }, st.session_state["user_creds"])
-
-        st.session_state["descricao_temp"] = ""
-        st.success("📝 Lançamento salvo!")
-        st.session_state["page"] = "main"
-        st.rerun()
-
+    # 🔹 FORMULÁRIO PRINCIPAL
     with st.form("finance_form"):
 
         date = st.date_input("Data")
         tipo = st.selectbox("Tipo", ["Entrada", "Saída"], index=1)
         value = st.number_input("Valor", min_value=0.0, format="%.2f")
-        description = st.text_input("Descrição")
+
+        description = st.text_input(
+            "Descrição",
+            value=st.session_state["descricao_temp"]
+        )
+
         obs = st.text_area("Observação (opcional)")
 
         submit = st.form_submit_button("Salvar")
@@ -157,6 +138,7 @@ with st.form("finance_form"):
                 "obs": obs
             }, st.session_state["user_creds"])
 
+            st.session_state["descricao_temp"] = ""
             st.success("📝 Lançamento salvo!")
             st.session_state["page"] = "main"
             st.rerun()
