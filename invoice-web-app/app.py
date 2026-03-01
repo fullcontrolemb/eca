@@ -56,7 +56,7 @@ if st.session_state["page"] == "add":
     with st.form("finance_form"):
 
         date = st.date_input("Data")
-        tipo = st.selectbox("Tipo", ["Entrada", "Saída"])
+        tipo = st.selectbox("Tipo", ["Entrada", "Saída"], index=1)
         value = st.number_input("Valor", min_value=0.0, format="%.2f")
         description = st.text_input("Descrição")
         obs = st.text_area("Observação (opcional)")
