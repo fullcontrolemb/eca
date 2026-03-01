@@ -79,8 +79,17 @@ if st.session_state["page"] == "add":
 # ========================
 # PÁGINA VISUALIZAR
 # ========================
-
 if st.session_state["page"] == "view":
+
+    # 🔙 BOTÃO NO TOPO
+    col1, col2 = st.columns([1, 5])
+
+    with col1:
+        if st.button("🔙 Voltar"):
+            st.session_state["page"] = "main"
+            st.rerun()
+
+    st.title("📊 Visualização do Mês")
 
     data = get_month_data(st.session_state["user_creds"])
 
@@ -90,6 +99,7 @@ if st.session_state["page"] == "view":
     else:
         st.info("Não há dados no mês atual.")
 
+    # 🔙 BOTÃO VOLTAR
     if st.button("🔙 Voltar"):
         st.session_state["page"] = "main"
         st.rerun()
