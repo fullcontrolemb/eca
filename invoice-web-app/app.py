@@ -42,11 +42,11 @@ if st.session_state["page"] == "main":
 
     if st.button("➕ Adicionar"):
         st.session_state["page"] = "add"
-        st.experimental_rerun()
+        st.rerun()
 
     if st.button("📊 Visualizar"):
         st.session_state["page"] = "view"
-        st.experimental_rerun()
+        st.rerun()
 # ========================
 # PÁGINA ADICIONAR
 # ========================
@@ -74,7 +74,7 @@ if st.session_state["page"] == "add":
 
             st.success("📝 Lançamento salvo!")
             st.session_state["page"] = "main"
-            st.experimental_rerun()
+            st.rerun()
 
 # ========================
 # PÁGINA VISUALIZAR
@@ -92,4 +92,4 @@ if st.session_state["page"] == "view":
 
     if st.button("🔙 Voltar"):
         st.session_state["page"] = "main"
-        st.experimental_rerun()
+        st.rerun()
