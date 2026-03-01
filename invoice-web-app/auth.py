@@ -29,7 +29,14 @@ def handle_callback():
             st.stop()
 
 
+import streamlit as st
+import requests
+from config import CLIENT_ID, REDIRECT_URI, SCOPES
+
+AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+
 def login_page():
+
     params = {
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
@@ -42,5 +49,12 @@ def login_page():
     auth_request = requests.Request("GET", AUTH_URL, params=params).prepare()
 
     st.title("📊 Finance SaaS")
-    st.markdown("Gerencie suas despesas com segurança.")
-    st.link_button("🚀 Login com Google", auth_request.url)
+    st.markdown("Redirecionando para login...")
+
+    # 🔥 Redireciona na MESMA aba
+    st.markdown(
+        f"""
+        <meta http-equiv="refresh" content="0; url={auth_request.url}">
+        """,
+        unsafe_allow_html=True,
+    )
