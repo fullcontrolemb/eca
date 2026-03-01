@@ -2,6 +2,7 @@ import streamlit as st
 from auth import handle_callback, login_page
 from sheets import save_entry, get_month_data
 from dashboard import render_dashboard
+from database import get_token
 
 st.set_page_config(page_title="Finance SaaS", page_icon="📊")
 
