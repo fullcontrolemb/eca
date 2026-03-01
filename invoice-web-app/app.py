@@ -23,14 +23,14 @@ if "user_email" in st.session_state and "user_creds" not in st.session_state:
 
 st.set_page_config(page_title="Finance SaaS", page_icon="📊")
 
+# 🔥 Processa retorno do Google (UMA ÚNICA VEZ)
 handle_callback()
 
-if "user_creds" not in st.session_state:
-    login_page()
-    st.stop()
+# 🔥 Se logado, salvar cookie
+if "user_email" in st.session_state:
+    cookie_manager.set("user_email", st.session_state["user_email"])
 
-handle_callback()
-
+# 🔥 Se ainda não estiver logado, mostra login
 if "user_creds" not in st.session_state:
     login_page()
     st.stop()
@@ -38,8 +38,8 @@ if "user_creds" not in st.session_state:
 # 🔧 Inicializa página
 if "page" not in st.session_state:
     st.session_state["page"] = "main"
-    
-    # 🔹 Inicializa atalhos
+
+# 🔹 Inicializa atalhos
 if "shortcuts" not in st.session_state:
     st.session_state["shortcuts"] = [
         {"label": "Mercado", "icon": "🛒"},
@@ -59,6 +59,7 @@ st.sidebar.success("Conectado")
 
 if st.sidebar.button("Logout"):
     st.session_state.clear()
+    cookie_manager.delete("user_email")
     st.rerun()
 
 # ========================

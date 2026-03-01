@@ -51,8 +51,6 @@ def handle_callback():
     # 🔥 Salva na sessão
     st.session_state["user_creds"] = token_json
     st.session_state["user_email"] = email
-    cookie_manager.set("user_email", email)
-
     st.rerun()
 
 def login_page():
