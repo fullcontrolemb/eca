@@ -53,6 +53,16 @@ if st.session_state["page"] == "main":
 
 if st.session_state["page"] == "add":
 
+    # 🔙 BOTÃO VOLTAR NO TOPO
+    col1, col2 = st.columns([1, 5])
+
+    with col1:
+        if st.button("🔙 Voltar", key="voltar_add"):
+            st.session_state["page"] = "main"
+            st.rerun()
+
+    st.title("➕ Novo Lançamento")
+
     with st.form("finance_form"):
 
         date = st.date_input("Data")
@@ -103,3 +113,4 @@ if st.session_state["page"] == "view":
     if st.button("🔙 Voltar", key="voltar_add"):
         st.session_state["page"] = "main"
         st.rerun()
+        
