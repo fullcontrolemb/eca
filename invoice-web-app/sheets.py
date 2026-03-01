@@ -21,7 +21,8 @@ def get_month_sheet():
     return f"{now.year}-{now.month:02d}"
 
 
-def save_invoice(data, token_json):
+def save_entry(data, token_json):
+
     creds = get_creds(token_json)
     client = gspread.authorize(creds)
 
@@ -36,20 +37,20 @@ def save_invoice(data, token_json):
         ws = sh.worksheet(sheet_name)
     except:
         ws = sh.add_worksheet(title=sheet_name, rows="1000", cols="10")
-        ws.append_row(["Date", "Vendor", "Amount", "Currency", "Category", "File", "Created"])
+        ws.append_row(["Date", "Type", "Description", "Amount", "Currency", "Created"])
 
     ws.append_row([
         data["date"],
-        data["vendor"],
+        data["type"],  # Receita ou Despesa
+        data["description"],
         data["amount"],
         data["currency"],
-        data["category"],
-        data.get("file", ""),
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ])
 
 
-def get_summary(token_json):
+def get_data(token_json):
+
     creds = get_creds(token_json)
     client = gspread.authorize(creds)
 
@@ -66,7 +67,8 @@ def get_summary(token_json):
     df = pd.DataFrame(records)
     df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce")
 
-    return {
-        "total": df["Amount"].sum(),
-        "by_category": df.groupby("Category")["Amount"].sum()
-    }
+    receitas = df[df["Type"] == "Receita"]["Amount"].sum()
+    despesas = df[df["Type"] == "Despesa"]["Amount"].sum()
+    saldo = receitas - despesas
+
+    return df, receitas, despesas, saldo
