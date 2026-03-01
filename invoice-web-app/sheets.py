@@ -65,6 +65,14 @@ def get_data(token_json):
         return None
 
     df = pd.DataFrame(records)
+
+    # 🔥 Correção automática de colunas antigas
+    if "Type" not in df.columns:
+        df["Type"] = "Despesa"
+
+    if "Amount" not in df.columns:
+        return None
+
     df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce")
 
     receitas = df[df["Type"] == "Receita"]["Amount"].sum()
