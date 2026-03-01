@@ -23,16 +23,33 @@ def handle_callback():
 
         if "access_token" in token_json:
 
+            # 🔥 Buscar email do usuário
+            userinfo = requests.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {token_json['access_token']}"}
+            ).json()
+
+            email = userinfo["email"]
+
             # 🔥 Preserva refresh_token se já existir
             if "user_creds" in st.session_state:
                 existing_refresh = st.session_state["user_creds"].get("refresh_token")
                 if existing_refresh and "refresh_token" not in token_json:
                     token_json["refresh_token"] = existing_refresh
 
+            # 🔥 SALVA NO SUPABASE
+            save_token(email, token_json)
+
+            # 🔥 Salva na sessão
             st.session_state["user_creds"] = token_json
+            st.session_state["user_email"] = email
 
             st.query_params.clear()
             st.rerun()
+
+        else:
+            st.error(token_json)
+            st.stop()
 
         else:
             st.error(token_json)
