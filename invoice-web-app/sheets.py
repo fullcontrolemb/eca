@@ -6,14 +6,28 @@ import streamlit as st
 
 SPREADSHEET_NAME = "Finance_Control_2026"
 
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+import streamlit as st
+
 def get_creds(token_json):
-    return Credentials(
+
+    creds = Credentials(
         token=token_json["access_token"],
         refresh_token=token_json.get("refresh_token"),
         token_uri="https://oauth2.googleapis.com/token",
         client_id=st.secrets["GOOGLE_CLIENT_ID"],
         client_secret=st.secrets["GOOGLE_CLIENT_SECRET"],
     )
+
+    # 🔥 Se token expirou, renova automaticamente
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+
+        # Atualiza o access_token salvo na sessão
+        st.session_state["user_creds"]["access_token"] = creds.token
+
+    return creds
 
 def get_month_sheet():
     now = datetime.now()

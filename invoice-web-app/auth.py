@@ -21,9 +21,18 @@ def handle_callback():
         token_json = response.json()
 
         if "access_token" in token_json:
+
+            # 🔥 Preserva refresh_token se já existir
+            if "user_creds" in st.session_state:
+                existing_refresh = st.session_state["user_creds"].get("refresh_token")
+                if existing_refresh and "refresh_token" not in token_json:
+                    token_json["refresh_token"] = existing_refresh
+
             st.session_state["user_creds"] = token_json
+
             st.query_params.clear()
             st.rerun()
+
         else:
             st.error(token_json)
             st.stop()
