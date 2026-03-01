@@ -14,6 +14,22 @@ if "user_creds" not in st.session_state:
 # 🔧 Inicializa página
 if "page" not in st.session_state:
     st.session_state["page"] = "main"
+    
+    # 🔹 Inicializa atalhos
+if "shortcuts" not in st.session_state:
+    st.session_state["shortcuts"] = [
+        {"label": "Mercado", "icon": "🛒"},
+        {"label": "Farmácia", "icon": "💊"},
+        {"label": "Gasolina", "icon": "⛽"},
+        {"label": "Padaria", "icon": "🥖"},
+        {"label": "Mercadinho", "icon": "🏪"},
+        {"label": "Verdurão", "icon": "🥬"},
+        {"label": "Shopping", "icon": "🛍"},
+        {"label": "Compra Online", "icon": "💻"},
+    ]
+
+if "descricao_temp" not in st.session_state:
+    st.session_state["descricao_temp"] = ""
 
 st.sidebar.success("Conectado")
 
@@ -62,6 +78,65 @@ if st.session_state["page"] == "add":
             st.rerun()
 
     st.title("➕ Novo Lançamento")
+
+with st.form("finance_form"):
+
+    date = st.date_input("Data")
+    tipo = st.selectbox("Tipo", ["Entrada", "Saída"], index=1)
+    value = st.number_input("Valor", min_value=0.0, format="%.2f")
+
+    description = st.text_input(
+        "Descrição",
+        value=st.session_state["descricao_temp"]
+    )
+
+    st.markdown("### ⚡ Atalhos rápidos")
+
+    cols = st.columns(4)
+
+    for i, item in enumerate(st.session_state["shortcuts"]):
+
+        label = f"{item['icon']} {item['label']}" if item["icon"] else item["label"]
+
+        if cols[i % 4].form_submit_button(label):
+            st.session_state["descricao_temp"] = item["label"]
+            st.rerun()
+
+    st.divider()
+
+    st.markdown("### ➕ Criar novo atalho")
+
+    colA, colB = st.columns(2)
+
+    novo_nome = colA.text_input("Nome do botão")
+    novo_icon = colB.text_input("Emoji (opcional)")
+
+    if st.form_submit_button("Adicionar Atalho"):
+        if novo_nome:
+            st.session_state["shortcuts"].append({
+                "label": novo_nome,
+                "icon": novo_icon
+            })
+            st.success("Atalho criado!")
+            st.rerun()
+
+    obs = st.text_area("Observação (opcional)")
+
+    submit = st.form_submit_button("Salvar")
+
+    if submit:
+        save_entry({
+            "date": str(date),
+            "type": tipo,
+            "value": value,
+            "description": st.session_state["descricao_temp"],
+            "obs": obs
+        }, st.session_state["user_creds"])
+
+        st.session_state["descricao_temp"] = ""
+        st.success("📝 Lançamento salvo!")
+        st.session_state["page"] = "main"
+        st.rerun()
 
     with st.form("finance_form"):
 
