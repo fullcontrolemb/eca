@@ -11,6 +11,10 @@ if "user_creds" not in st.session_state:
     login_page()
     st.stop()
 
+# 🔧 Inicializa página
+if "page" not in st.session_state:
+    st.session_state["page"] = "main"
+
 st.sidebar.success("Conectado")
 
 if st.sidebar.button("Logout"):
@@ -20,10 +24,6 @@ if st.sidebar.button("Logout"):
 # ========================
 # TELA PRINCIPAL
 # ========================
-
-# ——————————————
-# Tela Principal
-# ——————————————
 
 if st.session_state["page"] == "main":
 
