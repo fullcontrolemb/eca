@@ -4,6 +4,15 @@ from sheets import save_entry, get_month_data
 from dashboard import render_dashboard
 from database import get_token
 
+import extra_streamlit_components as stx
+cookie_manager = stx.CookieManager()
+
+# 🔥 Restaurar email salvo no cookie
+if "user_email" not in st.session_state:
+    saved_email = cookie_manager.get("user_email")
+    if saved_email:
+        st.session_state["user_email"] = saved_email
+
 st.set_page_config(page_title="Finance SaaS", page_icon="📊")
 
 handle_callback()
