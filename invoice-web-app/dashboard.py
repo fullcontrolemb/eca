@@ -30,17 +30,18 @@ def render_dashboard(df, entradas, saidas, saldo):
 
     st.subheader("📈 Distribuição")
 
-    # 🔹 Agora incluindo o SALDO no gráfico
     chart_data = pd.DataFrame({
         "Categoria": ["Entradas", "Saídas", "Saldo"],
         "Valor": [entradas, saidas, abs(saldo)]
     }).set_index("Categoria")
 
-    # Definindo cores fixas
-cores = ["green", "red", "blue"]
-fig = chart_data.plot.pie(
-    y="Valor",
-    autopct="%1.1f%%",
-    colors=cores
-).figure
-st.pyplot(fig)
+    # Cores fixas: verde, vermelho, azul
+    cores = ["green", "red", "blue"]
+
+    fig = chart_data.plot.pie(
+        y="Valor",
+        autopct="%1.1f%%",
+        colors=cores
+    ).figure
+
+    st.pyplot(fig)
