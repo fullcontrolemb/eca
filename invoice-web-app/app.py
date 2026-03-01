@@ -21,62 +21,60 @@ if st.sidebar.button("Logout"):
 # TELA PRINCIPAL
 # ========================
 
-st.title("💰 Controle Financeiro")
+# ——————————————
+# Tela Principal
+# ——————————————
 
-col1, col2 = st.columns(2)
+if st.session_state["page"] == "main":
 
-if col1.button("➕ Adicionar"):
-    st.session_state["page"] = "add"
+    st.title("📊 Controle Financeiro")
 
-if col2.button("📊 Visualizar"):
-    st.session_state["page"] = "view"
+    col1,col2,col3 = st.columns(3)
 
-if "page" not in st.session_state:
-    st.session_state["page"] = "add"
+    data = get_month_data(st.session_state["user_creds"]) or (None,0,0,0)
+    entradas, saidas, saldo = data[1], data[2], data[3]
 
+    col1.metric("Entradas", f"{entradas:.2f}")
+    col2.metric("Saídas", f"{saidas:.2f}")
+
+    color = "blue" if saldo >= 0 else "red"
+    col3.markdown(f"<h3 style='color:{color};'>{saldo:.2f}</h3>", unsafe_allow_html=True)
+
+    if st.button("➕ Adicionar"):
+        st.session_state["page"] = "add"
+        st.experimental_rerun()
+
+    if st.button("📊 Visualizar"):
+        st.session_state["page"] = "view"
+        st.experimental_rerun()
 # ========================
 # PÁGINA ADICIONAR
 # ========================
 
 if st.session_state["page"] == "add":
 
-    tab1, tab2 = st.tabs(["Despesa", "Receita"])
+    with st.form("finance_form"):
 
-    with tab1:
-        with st.form("expense_form"):
-            date = st.date_input("Data")
-            desc = st.text_input("Descrição")
-            amount = st.number_input("Valor", min_value=0.0)
-            currency = st.selectbox("Moeda", ["BRL", "USD", "EUR"])
-            submit = st.form_submit_button("Salvar Despesa")
+        date = st.date_input("Data")
+        tipo = st.selectbox("Tipo", ["Entrada", "Saída"])
+        value = st.number_input("Valor", min_value=0.0, format="%.2f")
+        description = st.text_input("Descrição")
+        obs = st.text_area("Observação (opcional)")
 
-            if submit:
-                save_entry({
-                    "date": str(date),
-                    "type": "Despesa",
-                    "description": desc,
-                    "amount": amount,
-                    "currency": currency
-                }, st.session_state["user_creds"])
-                st.success("Despesa registrada!")
+        submit = st.form_submit_button("Salvar")
 
-    with tab2:
-        with st.form("income_form"):
-            date = st.date_input("Data Receita")
-            desc = st.text_input("Descrição Receita")
-            amount = st.number_input("Valor Receita", min_value=0.0)
-            currency = st.selectbox("Moeda Receita", ["BRL", "USD", "EUR"])
-            submit = st.form_submit_button("Salvar Receita")
+        if submit:
+            save_entry({
+                "date": str(date),
+                "type": tipo,
+                "value": value,
+                "description": description,
+                "obs": obs
+            }, st.session_state["user_creds"])
 
-            if submit:
-                save_entry({
-                    "date": str(date),
-                    "type": "Receita",
-                    "description": desc,
-                    "amount": amount,
-                    "currency": currency
-                }, st.session_state["user_creds"])
-                st.success("Receita registrada!")
+            st.success("📝 Lançamento salvo!")
+            st.session_state["page"] = "main"
+            st.experimental_rerun()
 
 # ========================
 # PÁGINA VISUALIZAR
@@ -84,10 +82,14 @@ if st.session_state["page"] == "add":
 
 if st.session_state["page"] == "view":
 
-    data = get_data(st.session_state["user_creds"])
+    data = get_month_data(st.session_state["user_creds"])
 
     if data:
-        df, receitas, despesas, saldo = data
-        render_dashboard(df, receitas, despesas, saldo)
+        df, entradas, saidas, saldo = data
+        render_dashboard(df, entradas, saidas, saldo)
     else:
-        st.info("Sem dados para o mês atual.")
+        st.info("Não há dados no mês atual.")
+
+    if st.button("🔙 Voltar"):
+        st.session_state["page"] = "main"
+        st.experimental_rerun()

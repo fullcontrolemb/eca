@@ -2,9 +2,9 @@ import gspread
 import pandas as pd
 from datetime import datetime
 from google.oauth2.credentials import Credentials
-from config import SPREADSHEET_NAME
 import streamlit as st
 
+SPREADSHEET_NAME = "Finance_Control_2026"
 
 def get_creds(token_json):
     return Credentials(
@@ -15,68 +15,59 @@ def get_creds(token_json):
         client_secret=st.secrets["GOOGLE_CLIENT_SECRET"],
     )
 
-
 def get_month_sheet():
     now = datetime.now()
     return f"{now.year}-{now.month:02d}"
 
-
-def save_entry(data, token_json):
-
+def create_monthly_sheet_if_not_exists(token_json):
     creds = get_creds(token_json)
     client = gspread.authorize(creds)
 
     try:
         sh = client.open(SPREADSHEET_NAME)
-    except:
+    except gspread.SpreadsheetNotFound:
         sh = client.create(SPREADSHEET_NAME)
 
     sheet_name = get_month_sheet()
 
     try:
-        ws = sh.worksheet(sheet_name)
-    except:
-        ws = sh.add_worksheet(title=sheet_name, rows="1000", cols="10")
-        ws.append_row(["Date", "Type", "Description", "Amount", "Currency", "Created"])
+        worksheet = sh.worksheet(sheet_name)
+    except gspread.WorksheetNotFound:
+        worksheet = sh.add_worksheet(title=sheet_name, rows="1000", cols="10")
+        worksheet.append_row(
+            ["Data", "Tipo", "Valor", "Descrição", "Observação", "Criado Em"]
+        )
+
+    return sh.worksheet(sheet_name)
+
+def save_entry(data, token_json):
+    ws = create_monthly_sheet_if_not_exists(token_json)
 
     ws.append_row([
         data["date"],
-        data["type"],  # Receita ou Despesa
+        data["type"],
+        data["value"],
         data["description"],
-        data["amount"],
-        data["currency"],
+        data["obs"],
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ])
 
-
-def get_data(token_json):
-
-    creds = get_creds(token_json)
-    client = gspread.authorize(creds)
-
+def get_month_data(token_json):
     try:
+        creds = get_creds(token_json)
+        client = gspread.authorize(creds)
         sh = client.open(SPREADSHEET_NAME)
+
         ws = sh.worksheet(get_month_sheet())
-    except:
+        records = ws.get_all_records()
+        df = pd.DataFrame(records)
+    except Exception as e:
         return None
 
-    records = ws.get_all_records()
-    if not records:
-        return None
+    df["Valor"] = pd.to_numeric(df["Valor"], errors="coerce")
 
-    df = pd.DataFrame(records)
+    entradas = df[df["Tipo"] == "Entrada"]["Valor"].sum()
+    saidas = df[df["Tipo"] == "Saída"]["Valor"].sum()
+    saldo = entradas - saidas
 
-    # 🔥 Correção automática de colunas antigas
-    if "Type" not in df.columns:
-        df["Type"] = "Despesa"
-
-    if "Amount" not in df.columns:
-        return None
-
-    df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce")
-
-    receitas = df[df["Type"] == "Receita"]["Amount"].sum()
-    despesas = df[df["Type"] == "Despesa"]["Amount"].sum()
-    saldo = receitas - despesas
-
-    return df, receitas, despesas, saldo
+    return df, entradas, saidas, saldo
