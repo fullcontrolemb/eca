@@ -31,13 +31,10 @@ if "user_email" in st.session_state:
     cookie_manager.set("user_email", st.session_state["user_email"])
 
 # 🔥 Se ainda não estiver logado, mostra login
-# 🔄 Aguarda restauração antes de mostrar login
 if "user_creds" not in st.session_state:
-
-    with st.spinner("Restaurando sessão..."):
-        st.stop()
     login_page()
-    
+    st.stop()
+
 # 🔧 Inicializa página
 if "page" not in st.session_state:
     st.session_state["page"] = "main"
