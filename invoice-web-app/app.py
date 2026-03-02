@@ -9,17 +9,27 @@ import extra_streamlit_components as stx
 # 🔥 Cookie manager (APENAS UMA VEZ)
 cookie_manager = stx.CookieManager(key="cookie_manager")
 
-# 🔥 Restaurar email salvo no cookie
-if "user_email" not in st.session_state:
-    saved_email = cookie_manager.get("user_email")
-    if saved_email:
-        st.session_state["user_email"] = saved_email
+# 🔥 Estado de inicialização
+if "app_ready" not in st.session_state:
+    st.session_state["app_ready"] = False
 
-# 🔥 Restaurar token do banco
-if "user_email" in st.session_state and "user_creds" not in st.session_state:
-    saved_token = get_token(st.session_state["user_email"])
-    if saved_token:
-        st.session_state["user_creds"] = saved_token
+    # 🔄 Restaurar sessão antes de qualquer renderização
+if not st.session_state["app_ready"]:
+
+    # Restaurar email
+    if "user_email" not in st.session_state:
+        saved_email = cookie_manager.get("user_email")
+        if saved_email:
+            st.session_state["user_email"] = saved_email
+
+    # Restaurar token
+    if "user_email" in st.session_state and "user_creds" not in st.session_state:
+        saved_token = get_token(st.session_state["user_email"])
+        if saved_token:
+            st.session_state["user_creds"] = saved_token
+
+    st.session_state["app_ready"] = True
+    st.rerun()
 
 st.set_page_config(page_title="Finance SaaS", page_icon="📊")
 
@@ -30,11 +40,14 @@ handle_callback()
 if "user_email" in st.session_state:
     cookie_manager.set("user_email", st.session_state["user_email"])
 
-# 🔥 Se ainda não estiver logado, mostra login
+# 🔄 Aguarda restauração antes de mostrar login
 if "user_creds" not in st.session_state:
-    login_page()
-    st.stop()
 
+    with st.spinner("Restaurando sessão..."):
+        st.stop()
+        
+    login_page()
+    
 # 🔧 Inicializa página
 if "page" not in st.session_state:
     st.session_state["page"] = "main"
