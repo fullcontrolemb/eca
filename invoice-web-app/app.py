@@ -31,10 +31,13 @@ if "user_email" in st.session_state:
     cookie_manager.set("user_email", st.session_state["user_email"])
 
 # 🔥 Se ainda não estiver logado, mostra login
+# 🔄 Aguarda restauração antes de mostrar login
 if "user_creds" not in st.session_state:
-    login_page()
-    st.stop()
 
+    with st.spinner("Restaurando sessão..."):
+        st.stop()
+    login_page()
+    
 # 🔧 Inicializa página
 if "page" not in st.session_state:
     st.session_state["page"] = "main"
@@ -139,34 +142,26 @@ if st.session_state["page"] == "add":
     st.divider()
 
     # 🔹 FORMULÁRIO PRINCIPAL
-    with st.form("finance_form"):
+    st.title("📊 Novo Lançamento Financeiro")
 
-        date = st.date_input("Data")
-        tipo = st.selectbox("Tipo", ["Entrada", "Saída"], index=1)
-        value = st.number_input("Valor", min_value=0.0, format="%.2f")
+with st.form("finance_form"):
 
-        description = st.text_input(
-            "Descrição",
-            value=st.session_state["descricao_temp"]
-        )
+    date = st.date_input("Data")
+    tipo = st.selectbox("Tipo", ["Entrada", "Saída"], index=1)
+    value = st.number_input("Valor", min_value=0.0, format="%.2f")
+    description = st.text_input("Descrição")
+    obs = st.text_area("Observação")
 
-        obs = st.text_area("Observação (opcional)")
+    submit = st.form_submit_button("Salvar")
 
-        submit = st.form_submit_button("Salvar")
-
-        if submit:
-            save_entry({
-                "date": str(date),
-                "type": tipo,
-                "value": value,
-                "description": description,
-                "obs": obs
-            }, st.session_state["user_creds"])
-
-            st.session_state["descricao_temp"] = ""
-            st.success("📝 Lançamento salvo!")
-            st.session_state["page"] = "main"
-            st.rerun()
+    if submit:
+        save_to_user_sheets({
+            "date": str(date),
+            "type": tipo,
+            "value": value,
+            "description": description,
+            "obs": obs
+        }, st.session_state["user_creds"])
 
 # ========================
 # PÁGINA VISUALIZAR
