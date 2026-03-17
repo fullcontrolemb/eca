@@ -26,44 +26,32 @@ def get_month_sheet_name():
     return f"{now.year}-{now.month:02d}"
 
 
-def save_to_user_sheets(data, user_creds):
+def save_to_user_sheets(data, token_json):
+
+    creds = get_creds(token_json)
+    client = gspread.authorize(creds)
+
     try:
-        import gspread
-        from datetime import datetime
+        sh = client.open(SPREADSHEET_NAME)
+    except gspread.SpreadsheetNotFound:
+        sh = client.create(SPREADSHEET_NAME)
 
-        client = gspread.authorize(user_creds)
+    sheet_name = get_month_sheet_name()
 
-        spreadsheet_name = "Finance_Control"
+    try:
+        worksheet = sh.worksheet(sheet_name)
+    except:
+        worksheet = sh.add_worksheet(title=sheet_name, rows="1000", cols="10")
+        worksheet.append_row(["Date", "Vendor", "Amount", "Currency", "File", "Created At"])
 
-        try:
-            sh = client.open(spreadsheet_name)
-        except:
-            sh = client.create(spreadsheet_name)
-
-            # 🔥 Cabeçalho novo padrão financeiro
-            sh.sheet1.append_row([
-                "Data", "Tipo", "Valor", "Descrição", "Observação"
-            ])
-
-            st.info("Planilha criada automaticamente no seu Google Drive!")
-
-        sheet = sh.sheet1
-
-        # 🔥 CONVERSÃO PARA NOVO PADRÃO
-        row = [
-            data.get("date", datetime.now().strftime("%Y-%m-%d")),
-            data.get("type", "Saída"),  # padrão
-            data.get("value", 0),
-            data.get("description", ""),
-            data.get("obs", "")
-        ]
-
-        sheet.append_row(row)
-
-        st.toast("✅ Salvo na planilha financeira!", icon="📊")
-
-    except Exception as e:
-        st.error(f"Erro ao salvar: {e}")
+    worksheet.append_row([
+        data["date"],
+        data["vendor_name"],
+        data["total_amount"],
+        data["currency"],
+        data.get("file_link", ""),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ])
 
 
 def get_monthly_summary(token_json):
