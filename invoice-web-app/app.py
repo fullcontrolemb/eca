@@ -9,17 +9,23 @@ import extra_streamlit_components as stx
 # 🔥 Cookie manager (APENAS UMA VEZ)
 cookie_manager = stx.CookieManager(key="cookie_manager")
 
-# 🔥 Restaurar email salvo no cookie
-if "user_email" not in st.session_state:
+if "app_ready" not in st.session_state:
+    st.session_state["app_ready"] = False
+
+# 🔄 RESTAURAÇÃO CONTROLADA (evita tela branca)
+if not st.session_state["app_ready"]:
+
     saved_email = cookie_manager.get("user_email")
+
     if saved_email:
         st.session_state["user_email"] = saved_email
 
-# 🔥 Restaurar token do banco
-if "user_email" in st.session_state and "user_creds" not in st.session_state:
-    saved_token = get_token(st.session_state["user_email"])
-    if saved_token:
-        st.session_state["user_creds"] = saved_token
+        saved_token = get_token(saved_email)
+        if saved_token:
+            st.session_state["user_creds"] = saved_token
+
+    st.session_state["app_ready"] = True
+    st.rerun()
 
 st.set_page_config(page_title="Finance SaaS", page_icon="📊")
 
@@ -31,7 +37,9 @@ if "user_email" in st.session_state:
     cookie_manager.set("user_email", st.session_state["user_email"])
 
 # 🔥 Se ainda não estiver logado, mostra login
+
 if "user_creds" not in st.session_state:
+    st.title("🔐 Carregando sessão...")
     login_page()
     st.stop()
 
@@ -192,7 +200,7 @@ if st.session_state["page"] == "view":
         st.info("Não há dados no mês atual.")
 
     # 🔙 BOTÃO VOLTAR
-    if st.button("🔙 Voltar", key="voltar_add"):
+    if st.button("🔙 Voltar", key="voltar_view_bottom"):
         st.session_state["page"] = "main"
         st.rerun()
         
